@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/snowflake http://www.mulesoft.org/schema/mule/snowflake/current/mule-snowflake.xsd">
+	<sub-flow name="get-hospitals-pincodeSub_Flow" doc:id="4eaceacd-0bc4-4195-9282-c691946dce4e" >
+		<snowflake:select doc:name="DB select to reterive hospitals detaailes by pincode" doc:id="1ea9bc7f-a63e-4b39-8f34-fa5444e133f2" config-ref="Snowflake_Config" >
+			<snowflake:sql ><![CDATA[select * from hospitalsdb where pincode = :pincode]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	"pincode": attributes.queryParams.pincode as Number
+}]]]></snowflake:input-parameters>
+		</snowflake:select>
+	</sub-flow>
+</mule>
