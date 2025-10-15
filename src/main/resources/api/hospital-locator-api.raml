@@ -1,0 +1,60 @@
+#%RAML 1.0
+title: Hospital Locator API
+version: v1
+protocols:
+  - HTTP
+  - HTTPS
+mediaType: 
+- application/json
+securitySchemes:
+  secure: !include securitySchema/securityScheme.raml
+securedBy:
+  - secure
+/pincode:
+  displayName: Hospital by pincode
+  get:
+    description: Retrieve hospitals based on the provided pincode
+    queryParameters:
+      pincode:
+        type: number
+        required: true
+        example: 531034
+    responses:
+      200:
+        body:
+          application/json:
+            examples: !include pincode example.raml    
+      400:
+        body:
+          application/json:
+            examples: !include pincode 400 example.raml
+/hospitals:
+  /{hospital_id}:
+    uriParameters:
+      hospital_id:
+        type: string
+        description: Unique Id of the hospital
+        example: "1"
+    /services:
+      get:
+        description: Get list of services available in the hospital
+        responses:
+          200:
+            body:
+              application/json:
+                example: !include services example.raml       
+/patients:
+  post:
+    description: Create a new patient and return the patientId
+    body:
+      application/json:
+        example: !include paitents example.raml
+    responses:
+      200:
+        body:
+          application/json:
+            example: !include paitents 200 example.raml
+      400:
+        body:
+          application/json:
+            example: !include paitents 400 example.raml
