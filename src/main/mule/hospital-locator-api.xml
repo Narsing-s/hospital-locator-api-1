@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/snowflake http://www.mulesoft.org/schema/mule/snowflake/current/mule-snowflake.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
+    <http:listener-config name="hospital-locator-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="hospital-locator-api-config" api="hospital-locator-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <snowflake:snowflake-config name="Snowflake_Config" doc:name="Snowflake Config" doc:id="158dcc9d-f6b4-44f6-a355-282195a5a292" >
+		<snowflake:snowflake-connection accountName="SBMQKDP-TT42813" warehouse="COMPUTE_WH" database="MYDATABASE" schema="TEST" user="SINGSING" password="Singsing@123456789" role="ACCOUNTADMIN" />
+	</snowflake:snowflake-config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="1323014d-56dd-4c48-a3c7-eb74a2b3b7c1" >
+		<email:smtp-connection host="smtp.gmail.com" port="587" user="narsingbeesetti06@gmail.com" password="kejo yanz wjpo vnum" >
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<flow name="hospital-locator-api-main">
+        <http:listener config-ref="hospital-locator-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="hospital-locator-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="hospital-locator-api-console">
+        <http:listener config-ref="hospital-locator-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="hospital-locator-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\hospitals\(hospital_id)\services:hospital-locator-api-config">
+        <logger level="INFO" doc:name="Start Flow" doc:id="07a89eaf-838b-4882-a03a-e7bf466184db" message="----------------Start Flow-----------------------"/>
+		<set-variable value="#[attributes.uriParams.hospital_id as Number]" doc:name="requestedHospital_id" doc:id="36822054-af5e-438c-b241-bcc201a0c8b2" variableName="requestedHospital_id"/>
+		<logger level="INFO" doc:name="Before DB" doc:id="75ca9510-6afc-44b0-a46d-f4eb3492a8fc" message="----------------------Before DB------------------------"/>
+		<snowflake:select doc:name="Select" doc:id="2ba89eaf-6ca2-4867-bfde-a8a248830d89" config-ref="Snowflake_Config">
+			<snowflake:sql ><![CDATA[select * from services where hospital_id = :hospital_id]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	"hospital_id": vars.requestedHospital_id
+}]]]></snowflake:input-parameters>
+		</snowflake:select>
+		<logger level="INFO" doc:name="After DB" doc:id="edda8861-965f-4c53-81c5-695b6f2ffaf7" message="---------------------After DB----------------"/>
+		<ee:transform doc:name="Mapping" doc:id="1d86d76a-5e2c-4136-948b-02b07527544f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (services) -> {
+	hospital_id: services.HOSPITAL_ID,
+    name: services.NAME,
+    serviceid: services.SERVICEID,
+    description: services.DESCRIPTION
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="4d9820a0-f36c-47e8-b546-8afac9c2decb" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<ee:transform doc:name="hospitals services found for requested pincode" doc:id="9074b3e1-ea4a-4919-9e19-dc61f9b0c781" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    status: "success",
+    hospital_id: vars.requestedHospital_id,
+    message: "Hospital services details retrieved successfully",
+    data: payload
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="No hospitals services found for requested pincode" doc:id="dbfb28bf-509f-4cde-848e-3a2d2ea52d5e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    status: "failure",
+    message: "No hospital services found for the requested hospital_id: " ++ (vars.requestedHospital_id as String),
+    data: []
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Flow" doc:id="2b449cdd-d258-4958-9dc5-242d019b8522" message="#[payload]"/>
+    </flow>
+	<flow name="get:\pincode:hospital-locator-api-config">
+        <logger level="INFO" doc:name="Start Flow" doc:id="f8472626-0d8b-43c5-852c-b2dba3662251" message="-----------------Start Flow-------------------"/>
+		<set-variable value="#[attributes.queryParams.pincode as Number]" doc:name="requestedPincode" doc:id="ce5bfe97-e06c-47ec-b5b9-ce2b4ab766af" variableName="requestedPincode"/>
+		<logger level="INFO" doc:name="Before DB" doc:id="919bced5-02d9-4021-916f-2434b61742f4" message="----------------------Before DB-----------------------"/>
+		<snowflake:select doc:name="Select" doc:id="be6ac6c4-81cf-46ac-9d83-03008b24bdc6" config-ref="Snowflake_Config">
+			<snowflake:sql ><![CDATA[select * from hospitalsdb where pincode = :pincode]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+  pincode: attributes.queryParams.pincode
+}]]]></snowflake:input-parameters>
+		</snowflake:select>
+		<logger level="INFO" doc:name="After DB" doc:id="d65c52f8-af28-4a1e-95fb-5d1dc31f387e" message="---------------After DB-----------------"/>
+		<ee:transform doc:name="Mapping" doc:id="2b58cc0c-ebeb-4251-b96f-d726c3298ed9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map (hospitalsDB) -> {
+    hospital_id: hospitalsDB.HOSPITAL_ID,
+    name: hospitalsDB.NAME,
+    address: hospitalsDB.ADDRESS,
+    contact: hospitalsDB.CONTACT
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="d1f227e3-111a-4b94-ab89-336e306a54d9" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<ee:transform doc:name="Hospitals found for requested pincode" doc:id="89df7dd2-9b95-43c5-8479-ac4fb19cdf3e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    status: "success",
+    pincode: vars.requestedPincode,
+    message: "Hospital details retrieved successfully",
+    data: payload
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="No hospitals found for requested pincode" doc:id="b8191a33-a948-47e8-a9a9-8b9359b8ac3a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    status: "failure",
+    message: "No hospital found for the requested pincode: " ++ (vars.requestedPincode as String),
+    data: []
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="End Flow" doc:id="1e951251-54a6-432c-b7bc-d0d8a0d62901" message="#[payload]"/>
+    </flow>
+    <sub-flow name="hospital-locator-api-email-Sub_Flow" doc:id="4a9b9d42-6533-42e3-85cf-3b9bc0c3773d" >
+		<logger level="INFO" doc:name="Before sending email" doc:id="037b308b-18aa-4bc2-aded-4e77f07cbc58" message="--------Before sending email--------------"/>
+		<set-variable value='#[vars.requestedPayload.firstName as String ++" " ++ vars.requestedPayload.LastName as String]' doc:name="name" doc:id="74c8b43c-754a-45e7-a0a9-447f9988599c" variableName="name"/>
+		<set-variable value='#[%dw 2.0&#10;output text/plain&#10;---&#10;"Hi " ++ (vars.name default "User") ++&#10;" your registration is completed successfully and your patient_id is " ++&#10;(vars.patient_id default "N/A")]' doc:name="emailBody" doc:id="b5ee16f7-f3db-4496-adbe-81b67fb985d9" variableName="emailBody"/>
+		<parse-template doc:name="Parse Template" doc:id="fd3d2591-6fb5-4066-b466-fa731ffb2b75" >
+			<content >&lt;html&gt;
+&lt;head&gt;
+    &lt;style&gt;
+        body {
+            text-align: center;
+        }
+        table {
+            margin: 0 auto;
+            height: 20vh;
+            width: 40vh;
+        }
+        h1 {
+            color: green;
+        }
+        h6 {
+            color: red;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Welcome&lt;/h1&gt;
+    &lt;h3&gt;#[vars.emailBody]&lt;/h3&gt;
+    
+    &lt;h6&gt;Note: This is an automated email. Please do not reply to this email.&lt;/h6&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</content>
+		</parse-template>
+		<email:send doc:name="Send" doc:id="e5889e42-2de9-4d56-86b9-d8daea1125c8" config-ref="Email_SMTP" fromAddress="narsingbeesetti06@gmail.com" subject='#[vars.name ++ " your patient Registration successful"]'>
+			<email:to-addresses >
+				<email:to-address value="#[vars.gmail]" />
+			</email:to-addresses>
+			<email:body contentType="text/html" encoding="UTF-8" />
+		</email:send>
+		<logger level="INFO" doc:name="After email sent" doc:id="5b49536c-abed-45bd-8633-2ca4253e779a" message="-----------------------------email sent successfully---------------------------"/>
+	</sub-flow>
+	<flow name="post:\patients:application\json:hospital-locator-api-config">
+		<logger level="INFO" doc:name="Start Flow" doc:id="ae8e39a4-5f8a-458f-9b77-c1a10db98279" message="-------------Start Flow----------------------"/>
+		<set-variable value="#[payload]" doc:name="requestedPayload" doc:id="77c6905f-6328-47e9-86f1-99365ef8641c" variableName="requestedPayload"/>
+		<set-variable value="#[payload.gmail]" doc:name="gmail" doc:id="20700b38-ec98-4dba-8f41-85467b66d980" variableName="gmail"/>
+		<choice doc:name="Choice" doc:id="8537527a-d3d7-41d3-b89d-88d731fef8ac" >
+			<when expression="#[payload.firstName == null or payload.LastName == null or payload.age == null or payload.gender == null or payload.phoneNumber ==null or payload.address == null or payload.gmail == null]">
+				<raise-error doc:name="Raise error" doc:id="4382547d-43fe-4b26-aa24-802f99ff614d" type='"HTTP:INVALID_REQUEST" ' description='"REQUIRED_KEY_FIELDS_MISSING"'/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="valid data" doc:id="305f3f17-080f-438e-8f1a-a662ebe0f2b6" message="#[payload]"/>
+			</otherwise>
+		</choice>
+		<snowflake:select doc:name="verify account" doc:id="d93599b4-b640-4ccb-9570-3ba8a44f5517" config-ref="Snowflake_Config">
+					<snowflake:sql><![CDATA[SELECT 
+    patient_id,
+    firstName,
+    lastName
+FROM patients
+WHERE gmail = :gmail;
+
+
+]]></snowflake:sql>
+					<snowflake:input-parameters><![CDATA[#[{
+	gmail: payload.gmail
+}]]]></snowflake:input-parameters>
+				</snowflake:select>
+		<logger level="INFO" doc:name="After select  DB" doc:id="59ba8586-e19c-49b2-866d-2125494607cd" message="-----------------After select  DB------------------"/>
+		<choice doc:name="Choice" doc:id="3221aca1-e177-47b1-9730-e40c0548d36e" >
+			<when expression="#[!isEmpty(payload)]">
+				<ee:transform doc:name="account already existed" doc:id="d256c5d5-d961-4241-af4e-c4a118e6a22d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"patient_id": payload.PATIENT_ID[0],
+	"message": "patient already existed",
+	"gmail": vars.gmail,
+	"data": vars.requestedPayload
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="patient is already existed in DB" doc:id="e6bd0d54-b415-4e9c-b829-24078f45458b" message="----------------------------patient is already existed in DB--------------------------"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="patient_id creation" doc:id="5555652a-3784-4a5a-8509-12bf91158289">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+var fname = upper(trim(vars.requestedPayload.firstName default ""))
+var lname = upper(trim(vars.requestedPayload.LastName default "")) 
+var first3 = if (sizeOf(fname) >= 3) fname[0 to 2] else fname
+var last3  = if (sizeOf(lname) >= 3) lname[(sizeOf(lname) - 3) to (sizeOf(lname) - 1)] else lname
+var randomNum = (floor(random() * 9000) + 1000) as String
+
+---
+{
+    patient_id: first3 ++ randomNum ++ last3,
+    status: "success",
+    patientDetails: payload
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<set-variable value="#[payload.patient_id]" doc:name="patient_id" doc:id="c052b6d3-0df7-45ea-81bc-3b82d9c7ce78" variableName="patient_id" />
+				<snowflake:insert doc:name="Insert" doc:id="a3522def-d074-464d-a071-d3a68fa10dbd" config-ref="Snowflake_Config">
+			<snowflake:sql><![CDATA[INSERT INTO patients (patient_id, firstName, lastName, age, gender, phoneNumber, address, gmail)
+VALUES (:patient_id, :firstName, :lastName, :age, :gender, :phoneNumber, :address, :gmail)]]></snowflake:sql>
+			<snowflake:input-parameters><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	patient_id: vars.patient_id,
+	firstName: vars.requestedPayload.firstName default "",
+	lastName: vars.requestedPayload.LastName default "",
+	age: vars.requestedPayload.age as String default "",
+	gender: vars.requestedPayload.gender default "",
+	phoneNumber: vars.requestedPayload.phoneNumber default "",
+	address: vars.requestedPayload.address default "",
+	gmail: vars.requestedPayload.gmail default "",
+}]]]></snowflake:input-parameters>
+		</snowflake:insert>
+				<flow-ref doc:name="Flow Reference" doc:id="d0311d98-9f23-4081-a0cb-9bef7c17f739" name="hospital-locator-api-email-Sub_Flow" targetValue="#[vars.gmail]" />
+				<ee:transform doc:name="response" doc:id="ce173d6f-709c-42a5-8db1-8cd5665ef255">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Patient successfully registered",
+  patient_id: vars.patient_id,
+  data: vars.requestedPayload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<logger level="INFO" doc:name="End Flow" doc:id="695eff40-72e6-4336-81ac-9df64a0b4a33" message="#[payload]" />
+			</otherwise>
+		</choice>
+    </flow>
+</mule>

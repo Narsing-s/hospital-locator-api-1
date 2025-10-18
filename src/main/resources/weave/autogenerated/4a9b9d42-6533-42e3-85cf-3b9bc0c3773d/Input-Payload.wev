@@ -1,6 +1,6 @@
 %dw 2.0
 
-type auto_46c76632_49a4_471d_a61d_e1eca51787a1_Output_Payload = {|
+type auto_4a9b9d42_6533_42e3_85cf_3b9bc0c3773d_Input_Payload = {|
   affectedRows?: Number, 
   generatedKeys?: { _?: Number }
 |} {"typeId": "com.mulesoft.connector.snowflake.api.params.SnowflakeStatementResult",
