@@ -1,4 +1,0 @@
-%dw 2.0
-
-type auto_357d357a_78d4_41b0_845c_8ac8cc33f5af_Output_Variables_Patient_id = String
-

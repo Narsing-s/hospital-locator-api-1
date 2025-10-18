@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_4a9b9d42_6533_42e3_85cf_3b9bc0c3773d_Input_Variables_gmail = String | Null
+
